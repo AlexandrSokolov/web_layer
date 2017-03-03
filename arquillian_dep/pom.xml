@@ -1,0 +1,175 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.savdev</groupId>
+        <artifactId>basic_dep</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../basic_dep</relativePath>
+    </parent>
+
+    <groupId>com.savdev</groupId>
+    <artifactId>arquillian_dep</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>Arquillian Dependency</name>
+    <description>This POM defines arquillian and wildfly dependency</description>
+
+
+    <properties>
+        <wildfly-path>wildfly-8.2.1.Final</wildfly-path>
+        <wildfly-version>8.2.1.Final</wildfly-version>
+        <arquillian-junit-container-version>1.1.8.Final</arquillian-junit-container-version>
+        <shrinkwrap-resolver-depchain-version>2.2.0-beta-2</shrinkwrap-resolver-depchain-version>
+        <shrinkwrap-descriptors-impl-version>1.1.0-beta-1</shrinkwrap-descriptors-impl-version>
+        <!--plugins versions:-->
+        <maven-resources-plugin-version>3.0.2</maven-resources-plugin-version>
+        <wildfly-maven-plugin-version>1.1.0.Alpha1</wildfly-maven-plugin-version>
+        <maven-dependency-plugin-version>3.0.0</maven-dependency-plugin-version>
+        <maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--Arquillian’s transitive dependencies:-->
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>1.1.8.Final</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-depchain</artifactId>
+            <version>${shrinkwrap-resolver-depchain-version}</version>
+            <scope>test</scope>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap.descriptors</groupId>
+            <artifactId>shrinkwrap-descriptors-impl</artifactId>
+            <version>${shrinkwrap-descriptors-impl-version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--Arquillian JUnit integration: -->
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+            <version>${arquillian-junit-container-version}</version>
+        </dependency>
+        <!--Container adapter for (not embedded) Wildfly START:-->
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+            <version>${wildfly-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-server</artifactId>
+            <version>${wildfly-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!--Container adapter for Wildfly end -->
+
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven-resources-plugin-version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources-as-config</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <!--copy standalone-full.xml into wildfly-->
+                            <outputDirectory>${project.build.directory}/${wildfly-path}/standalone/configuration/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources/wildfly8x-resources</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${wildfly-maven-plugin-version}</version>
+                <configuration>
+                    <version>${wildfly-version}</version>
+                </configuration>
+            </plugin>
+
+
+            <!--You need the maven dependency plugin to download locally a zip with the server, unless you provide your own, it will download under the /target directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-dependency-plugin-version}</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-dist</artifactId>
+                                    <version>${wildfly-version}</version>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>target</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin-version}</version>
+                <configuration>
+                    <!-- Fork every test because it will launch a separate AS instance -->
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <systemPropertyVariables>
+                        <arquillian.launch>wildfly-managed</arquillian.launch>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <!-- the maven dependency plugin will have already downloaded the server on /target -->
+                        <jboss.home>${project.basedir}/target/wildfly-${wildfly-version}</jboss.home>
+                        <module.path>${project.basedir}/target/wildfly-8.2.1.Final/modules</module.path>
+                    </systemPropertyVariables>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                </configuration>
+            </plugin>
+        </plugins>
+
+    </build>
+
+</project>
+

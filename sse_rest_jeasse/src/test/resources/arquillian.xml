@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation=" http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <!--in case you use several configurations set in the pom.xml file-->
+    <!--<systemPropertyVariables>-->
+    <!--<arquillian.launch>wildfly-managed</arquillian.launch>-->
+    <container qualifier="wildfly-managed" default="true">
+        <configuration>
+            <!--with managementPort property you do not configure wildfly to use another port, -->
+            <!--use just allow arquillian to use a correct port!-->
+            <!--correct value should be: ${jboss.management.http.port:9990} + ${jboss.socket.binding.port-offset:10000} -->
+            <!--in the log file you'll see: -->
+            <property name="managementPort">19990</property>
+            <property name="serverConfig">standalone-full-test.xml</property>
+        </configuration>
+    </container>
+</arquillian>
